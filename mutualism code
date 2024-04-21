@@ -1,0 +1,84 @@
+# 2-species mutualistic Lotka-Volterra model
+# in case you don’t have the solver library installed:
+# importing library
+require('deSolve')
+require('ggplot2')
+# Definition of the model
+#' * `N1`: Initial population size of species 1
+#' * `N2`: Initial population size of species 2
+#' @param params Named vector of model parameters.
+#' * `r1`: Per capita growth rate of species 1
+#' * `r2`: Per capita growth rate of species 1
+#' * `a12`: Effect of species 2 on species 1
+#' * `a21`: Effect of species 1 on species 2
+#' * `b1`: Half-saturation constant for species 1
+#' * `b2`: Half-saturation constant for species 2
+#' * `d1`: Rate of self-limitation for species 1
+#' * `d2`: Rate of self-limitation for species 2
+#' 
+mutualism <- function(times, N0, params){
+  N1 <- N0[1]
+  N2 <- N0[2]
+  with(as.list(params), {
+    dN1.dt <- r1*N1 + (a12*N2*N1)/(b2 + N2) - d1*N1^2
+    dN2.dt <- r2*N2 + (a21*N1*N2)/(b1 + N1) - d2*N2^2
+    return(list(c(dN1.dt, dN2.dt)))
+  })
+}
+
+
+params <- c(r1 = 3, r2 = 3, a12 = 3, a21 = 0.8, b1 = 20, b2 = 20, d1 = 0.04, d2 = 0.02)
+# initial conditions
+N0 <- c(1,1)
+# definition of time
+t.values <- seq(0, 10)
+# Simulate the continuous time dynamics using the ode function
+mutualsim.out <- ode(N0, t.values, mutualism, params)
+
+par(mfrow=c(1,2))
+plot(mutualsim.out[,1], mutualsim.out[,2], type='l',col='red', 
+     xlab='Time', ylab='Abundance', main = 'Competitor 1')
+plot(mutualsim.out[,1], mutualsim.out[,3],
+     type='l',col='blue', xlab='Time', ylab='Abundance', main = 'Competitor
+2')
+
+
+par(mfrow=c(1,1))  # Set plotting layout to a single plot
+
+# Plot the first competitor with adjusted y-axis limit
+plot(mutualsim.out[,1], mutualsim.out[,2], type='l', col='red', 
+     xlab='Time', ylab='Abundance', main = 'Competitors 1 and 2', ylim = c(0, 200))
+
+# Add lines for the second competitor
+lines(mutualsim.out[,1], mutualsim.out[,3], type='l', col='blue')
+legend("topright", legend=c("Competitor 1", "Competitor 2"), col=c("red", "blue"))
+       
+
+       
+run_lotka_volterra <- function(params, N0, times) {
+         out <- ode(y = N0, times = times, func = mutualism, parms = params)
+         return(out)
+       }
+
+N0 <- c(N1 = 10, N2 = 10)
+
+# Time points for simulation
+times <- seq(0, 100, by = 0.1)
+
+# Run the simulation
+sim <- run_lotka_volterra(params, N0, times)
+
+# Plot the results
+plot(sim, main = "Lotka-Volterra Type 2 Mutualism Model", xlab = "Time", ylab = "Population", col = c("blue", "red"), lwd = 2)
+legend("topright", legend = c("Species 1", "Species 2"), col = c("blue", "red"), lwd = 2)
+
+# Extract population data
+N1 <- sim[, "N1"]
+N2 <- sim[, "N2"]
+
+# Plot phase plane
+plot(N1, N2, type = "l", xlab = "Population of Species 1", ylab = "Population of Species 2", main = "Phase Plane Plot")
+lines(N2, N1, type = "l", col = "blue", pch = 20)
+legend("topright", legend = c("Species 1", "Species 2"), col = c("black", "blue"), lty = 1)
+
+
